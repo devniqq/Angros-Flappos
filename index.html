@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Angros Flappos 🚀</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        body {
+            background: #090d16;
+            color: #fff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            overflow: hidden;
+            touch-action: none;
+        }
+        #game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            max-width: 1280px;
+            max-height: 720px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.8);
+            border-radius: 12px;
+            overflow: hidden;
+            background: #111827;
+        }
+        canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+        .ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: rgba(9, 13, 22, 0.88);
+            backdrop-filter: blur(8px);
+            z-index: 10;
+            transition: opacity 0.3s ease;
+        }
+        .hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+        h1 {
+            font-size: 3rem;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, #f59e0b, #ef4444);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 4px 12px rgba(0,0,0,0.4);
+            letter-spacing: 2px;
+        }
+        p {
+            font-size: 1.1rem;
+            color: #9ca3af;
+            margin-bottom: 20px;
+            text-align: center;
+            max-width: 600px;
+            padding: 0 20px;
+        }
+        .btn-group {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .btn {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            border: none;
+            color: #fff;
+            font-weight: bold;
+            font-size: 1.1rem;
+            padding: 12px 28px;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 8px 18px rgba(245, 158, 11, 0.3);
+            transition: transform 0.1s, box-shadow 0.1s, background 0.2s;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 22px rgba(245, 158, 11, 0.4);
+        }
+        .btn:active {
+            transform: scale(0.95);
+        }
+        .btn-secondary {
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            box-shadow: 0 8px 18px rgba(59, 130, 246, 0.3);
+        }
+        .hud {
+            position: absolute;
+            top: 15px;
+            left: 20px;
+            right: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 1.2rem;
+            font-weight: bold;
+            z-index: 5;
+            pointer-events: none;
+            text-shadow: 0 2px 6px rgba(0,0,0,0.8);
+        }
+        .hud-item {
+            background: rgba(17, 24, 39, 0.6);
+            padding: 8px 16px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .coins-text { color: #f59e0b; }
+        .level-text { color: #60a5fa; }
+        .chars-text { color: #10b981; }
+
+        /* Shop Grid */
+        .shop-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            gap: 15px;
+            width: 85%;
+            max-height: 60vh;
+            overflow-y: auto;
+            padding: 15px;
+            background: rgba(17, 24, 39, 0.8);
+            border-radius: 12px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .shop-item {
+            background: #1f2937;
+            border: 2px solid #374151;
+            border-radius: 10px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+            transition: border-color 0.2s, transform 0.2s;
+        }
+        .shop-item:hover {
+            border-color: #f59e0b;
+            transform: translateY(-2px);
+        }
+        .shop-item.active {
+            border-color: #10b981;
+            background: #111827;
+        }
+        .shop-item-icon {
+            font-size: 2.2rem;
+            margin-bottom: 8px;
+        }
+        .shop-item-title {
+            font-size: 0.9rem;
+            font-weight: bold;
+            margin-bottom: 4px;
+            text-align: center;
+        }
+        .shop-item-price {
+            font-size: 0.85rem;
+            color: #f59e0b;
+        }
+
+        /* Level Selector Grid */
+        .story-select {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            overflow-x: auto;
+            width: 90%;
+            padding: 10px 0;
+        }
+        .story-btn {
+            background: #1f2937;
+            border: 1px solid #374151;
+            color: #fff;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        .story-btn.active {
+            background: #f59e0b;
+            color: #000;
+            font-weight: bold;
+        }
+        .levels-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 10px;
+            width: 80%;
+            max-height: 50vh;
+            overflow-y: auto;
+            margin-bottom: 20px;
+        }
+        .level-card {
+            background: #1f2937;
+            border: 2px solid #374151;
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .level-card.locked {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+        .level-card:hover:not(.locked) {
+            border-color: #60a5fa;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="game-container">
+        <!-- HUD -->
+        <div class="hud">
+            <div class="hud-item level-text" id="hud-level">Story 1 - Level 1</div>
+            <div class="hud-item chars-text" id="hud-birds">Flappos: 3</div>
+            <div class="hud-item coins-text" id="hud-coins">Coins: 0 🪙</div>
+        </div>
+
+        <!-- MAIN MENU -->
+        <div id="start-screen" class="ui-layer">
+            <h1>Angros Flappos</h1>
+            <p>Launch your Flappos, destroy enemy structures, and unlock powerful characters & gear across 20 Stories!</p>
+            <div class="btn-group">
+                <button class="btn" onclick="showStorySelect()">PLAY STORY</button>
+                <button class="btn btn-secondary" onclick="openShop()">SHOP & GADGETS</button>
+            </div>
+        </div>
+
+        <!-- STORY & LEVEL SELECT -->
+        <div id="level-screen" class="ui-layer hidden">
+            <h2>Select Story & Level</h2>
+            <div class="story-select" id="story-list"></div>
+            <div class="levels-grid" id="levels-grid"></div>
+            <button class="btn btn-secondary" onclick="showMainMenu()">BACK</button>
+        </div>
+
+        <!-- SHOP SCREEN -->
+        <div id="shop-screen" class="ui-layer hidden">
+            <h2>Flappo Shop & Gadgets</h2>
+            <p id="shop-coins">Your Coins: 0 🪙</p>
+            <div class="shop-container" id="shop-items"></div>
+            <button class="btn btn-secondary" onclick="showMainMenu()">BACK</button>
+        </div>
+
+        <!-- GAME OVER / WIN SCREEN -->
+        <div id="end-screen" class="ui-layer hidden">
+            <h1 id="end-title">LEVEL CLEAR!</h1>
+            <p id="end-subtitle">You earned +50 Coins!</p>
+            <div class="btn-group">
+                <button class="btn" id="next-btn" onclick="nextLevel()">NEXT LEVEL</button>
+                <button class="btn btn-secondary" onclick="restartLevel()">RETRY</button>
+                <button class="btn btn-secondary" onclick="showStorySelect()">LEVELS</button>
+            </div>
+        </div>
+
+        <canvas id="canvas"></canvas>
+    </div>
+
+<script>
+// Global Game State
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+
+let W = 1280, H = 720;
+let coins = parseInt(localStorage.getItem('af_coins')) || 0;
+let unlockedLevel = parseInt(localStorage.getItem('af_unlocked_level')) || 1; // Total level 1 to 240
+let currentStory = 1;
+let currentLevel = 1;
+
+let selectedCharacter = 'red_ball';
+let selectedGadget = 'none';
+
+let ownedChars = JSON.parse(localStorage.getItem('af_owned_chars')) || ['red_ball'];
+let ownedGadgets = JSON.parse(localStorage.getItem('af_owned_gadgets')) || ['none'];
+
+// Shop Catalog
+const charactersCatalog = [
+    { id: 'red_ball', name: 'Red Ball', icon: '🔴', price: 0, desc: 'Classic balanced jumper' },
+    { id: 'blue_split', name: 'Tri-Blue', icon: '🔵', price: 150, desc: 'Splits into 3 birds on click' },
+    { id: 'yellow_dash', name: 'Dash Yellow', icon: '🟡', price: 300, desc: 'High speed rocket burst' },
+    { id: 'penguin', name: 'Chilly Penguin', icon: '🐧', price: 500, desc: 'Freezes target structures' },
+    { id: 'lion', name: 'Roaring Lion', icon: '🦁', price: 800, desc: 'Heavy impact weight' },
+    { id: 'frog', name: 'Leaping Frog', icon: '🐸', price: 1000, desc: 'High bounce ability' },
+    { id: 'shiba', name: 'Shiba Doge', icon: '🐕', price: 1500, desc: 'Creates mini explosions' },
+    { id: 'ninja', name: 'Shadow Ninja', icon: '🥷', price: 2000, desc: 'Penetrates wood easily' },
+    { id: 'king', name: 'King Flappo', icon: '👑', price: 3000, desc: 'Massive shockwave effect' }
+];
+
+const gadgetsCatalog = [
+    { id: 'none', name: 'No Gear', icon: '❌', price: 0 },
+    { id: 'viking_helm', name: 'Viking Helm', icon: '🪖', price: 200 },
+    { id: 'ninja_mask', name: 'Ninja Mask', icon: '🎭', price: 400 },
+    { id: 'sunglasses', name: 'Cool Shades', icon: '🕶️', price: 600 },
+    { id: 'crown', name: 'Golden Crown', icon: '👑', price: 1000 }
+];
+
+// Environments for each story
+const storyEnvironments = [
+    { name: 'Green Hills', bgTop: '#38bdf8', bgBot: '#4ade80', ground: '#15803d' },
+    { name: 'Desert Ruins', bgTop: '#fdba74', bgBot: '#fef08a', ground: '#b45309' },
+    { name: 'Frozen Tundra', bgTop: '#93c5fd', bgBot: '#e0f2fe', ground: '#0284c7' },
+    { name: 'Lava Peaks', bgTop: '#451a03', bgBot: '#f97316', ground: '#7f1d1d' },
+    { name: 'Neon Cyber', bgTop: '#311b92', bgBot: '#f43f5e', ground: '#1e1b4b' },
+    { name: 'Deep Jungle', bgTop: '#064e3b', bgBot: '#a7f3d0', ground: '#022c22' },
+    { name: 'Cosmic Space', bgTop: '#090d16', bgBot: '#312e81', ground: '#1e293b' },
+    { name: 'Ancient Temple', bgTop: '#78350f', bgBot: '#fef3c7', ground: '#451a03' }
+];
+
+function resize() {
+    const container = document.getElementById('game-container');
+    W = container.clientWidth;
+    H = container.clientHeight;
+    canvas.width = W;
+    canvas.height = H;
+}
+window.addEventListener('resize', resize);
+resize();
+
+// Game Physics Objects
+let slingshot = { x: 180, y: H - 180 };
+let currentFlappo = null;
+let flapposRemaining = 3;
+let blocks = [];
+let enemies = [];
+let particles = [];
+let gameState = 'START'; // START, LEVEL_SELECT, SHOP, PLAYING, END
+
+let isDragging = false;
+let dragPos = { x: slingshot.x, y: slingshot.y };
+
+// Class definitions
+class Flappo {
+    constructor(x, y, type, gadget) {
+        this.x = x;
+        this.y = y;
+        this.vx = 0;
+        this.vy = 0;
+        this.radius = 18;
+        this.type = type;
+        this.gadget = gadget;
+        this.launched = false;
+        this.abilityUsed = false;
+    }
+    update() {
+        if (this.launched) {
+            this.vy += 0.35; // Gravity
+            this.x += this.vx;
+            this.y += this.vy;
+            this.vx *= 0.99;
+            this.vy *= 0.99;
+
+            // Ground collision
+            if (this.y + this.radius >= H - 80) {
+                this.y = H - 80 - this.radius;
+                this.vy *= -0.4;
+                this.vx *= 0.6;
+            }
+        }
+    }
+    draw() {
+        ctx.save();
+        ctx.translate(this.x, this.y);
+
+        // Body Color / Appearance
+        let icon = '🔴';
+        charactersCatalog.forEach(c => { if (c.id === this.type) icon = c.icon; });
+
+        ctx.font = '28px serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(icon, 0, 0);
+
+        // Gadget overlay
+        if (this.gadget !== 'none') {
+            let gIcon = '🕶️';
+            gadgetsCatalog.forEach(g => { if (g.id === this.gadget) gIcon = g.icon; });
+            ctx.font = '16px serif';
+            ctx.fillText(gIcon, 0, -14);
+        }
+
+        ctx.restore();
+    }
+}
+
+class Block {
+    constructor(x, y, w, h, hp = 100) {
+        this.x = x;
+        this.y = y;
+        this.w = w;
+        this.h = h;
+        this.hp = hp;
+        this.maxHp = hp;
+    }
+    draw() {
+        ctx.fillStyle = this.hp > 50 ? '#b45309' : '#d97706';
+        ctx.strokeStyle = '#451a03';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.roundRect(this.x, this.y, this.w, this.h, 4);
+        ctx.fill();
+        ctx.stroke();
+    }
+}
+
+class Enemy {
+    constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.radius = 16;
+        this.hp = 50;
+    }
+    draw() {
+        ctx.font = '26px serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('🐷', this.x, this.y);
+    }
+}
+
+function updateHUD() {
+    document.getElementById('hud-level').innerText = `Story ${currentStory} - Level ${currentLevel}`;
+    document.getElementById('hud-birds').innerText = `Flappos: ${flapposRemaining}`;
+    document.getElementById('hud-coins').innerText = `Coins: ${coins} 🪙`;
+}
+
+function initLevel(story, level) {
+    currentStory = story;
+    currentLevel = level;
+    flapposRemaining = 3;
+    slingshot = { x: 160, y: H - 160 };
+    dragPos = { x: slingshot.x, y: slingshot.y };
+    
+    currentFlappo = new Flappo(slingshot.x, slingshot.y, selectedCharacter, selectedGadget);
+
+    // Build structure dynamically based on level
+    blocks = [];
+    enemies = [];
+    
+    let baseX = W - 350;
+    let baseY = H - 80;
+
+    // Build stacks
+    for (let i = 0; i < 3; i++) {
+        blocks.push(new Block(baseX + i * 70, baseY - 120, 20, 120, 80));
+        blocks.push(new Block(baseX, baseY - 140 - (i * 25), 160, 20, 60));
+        enemies.push(new Enemy(baseX + 40 + i * 40, baseY - 30));
+    }
+
+    updateHUD();
+}
+
+// Input Handlers for Dragging & Slingshot
+function getEventPos(e) {
+    const rect = canvas.getBoundingClientRect();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    return {
+        x: (clientX - rect.left) * (W / rect.width),
+        y: (clientY - rect.top) * (H / rect.height)
+    };
+}
+
+function startDrag(e) {
+    if (gameState !== 'PLAYING' || !currentFlappo || currentFlappo.launched) return;
+    const pos = getEventPos(e);
+    const dist = Math.hypot(pos.x - slingshot.x, pos.y - slingshot.y);
+    if (dist < 60) {
+        isDragging = true;
+    }
+}
+
+function moveDrag(e) {
+    if (!isDragging) return;
+    const pos = getEventPos(e);
+    const angle = Math.atan2(pos.y - slingshot.y, pos.x - slingshot.x);
+    const dist = Math.min(Math.hypot(pos.x - slingshot.x, pos.y - slingshot.y), 110);
+
+    dragPos.x = slingshot.x + Math.cos(angle) * dist;
+    dragPos.y = slingshot.y + Math.sin(angle) * dist;
+
+    currentFlappo.x = dragPos.x;
+    currentFlappo.y = dragPos.y;
+}
+
+function endDrag() {
+    if (!isDragging) return;
+    isDragging = false;
+    
+    // Launch Flappo
+    const dx = slingshot.x - dragPos.x;
+    const dy = slingshot.y - dragPos.y;
+
+    currentFlappo.vx = dx * 0.22;
+    currentFlappo.vy = dy * 0.22;
+    currentFlappo.launched = true;
+
+    // Prepare next flappo after 3s if needed
+    setTimeout(checkTurn, 3500);
+}
+
+canvas.addEventListener('mousedown', startDrag);
+canvas.addEventListener('mousemove', moveDrag);
+window.addEventListener('mouseup', endDrag);
+
+canvas.addEventListener('touchstart', startDrag, { passive: false });
+canvas.addEventListener('touchmove', moveDrag, { passive: false });
+window.addEventListener('touchend', endDrag);
+
+function checkTurn() {
+    if (gameState !== 'PLAYING') return;
+
+    if (enemies.length === 0) {
+        // Level Win!
+        gameState = 'END';
+        coins += 50;
+        localStorage.setItem('af_coins', coins);
+
+        let totalLvl = (currentStory - 1) * 12 + currentLevel;
+        if (totalLvl >= unlockedLevel) {
+            unlockedLevel = totalLvl + 1;
+            localStorage.setItem('af_unlocked_level', unlockedLevel);
+        }
+
+        document.getElementById('end-title').innerText = 'LEVEL CLEAR! 🎉';
+        document.getElementById('end-subtitle').innerText = `You earned +50 Coins! Total: ${coins} 🪙`;
+        document.getElementById('end-screen').classList.remove('hidden');
+        return;
+    }
+
+    flapposRemaining--;
+    updateHUD();
+
+    if (flapposRemaining <= 0) {
+        // Game Over
+        gameState = 'END';
+        document.getElementById('end-title').innerText = 'LEVEL FAILED 💥';
+        document.getElementById('end-subtitle').innerText = 'Out of Flappos! Try again.';
+        document.getElementById('end-screen').classList.remove('hidden');
+    } else {
+        // Next Flappo
+        currentFlappo = new Flappo(slingshot.x, slingshot.y, selectedCharacter, selectedGadget);
+    }
+}
+
+// Navigation Screens
+function showMainMenu() {
+    gameState = 'START';
+    document.getElementById('start-screen').classList.remove('hidden');
+    document.getElementById('level-screen').classList.add('hidden');
+    document.getElementById('shop-screen').classList.add('hidden');
+    document.getElementById('end-screen').classList.add('hidden');
+}
+
+function showStorySelect() {
+    gameState = 'LEVEL_SELECT';
+    document.getElementById('start-screen').classList.add('hidden');
+    document.getElementById('level-screen').classList.remove('hidden');
+    document.getElementById('end-screen').classList.add('hidden');
+
+    const storyList = document.getElementById('story-list');
+    storyList.innerHTML = '';
+    
+    for (let s = 1; s <= 20; s++) {
+        const btn = document.createElement('button');
+        btn.className = `story-btn ${s === currentStory ? 'active' : ''}`;
+        btn.innerText = `Story ${s}`;
+        btn.onclick = () => {
+            currentStory = s;
+            showStorySelect();
+        };
+        storyList.appendChild(btn);
+    }
+
+    const grid = document.getElementById('levels-grid');
+    grid.innerHTML = '';
+
+    for (let l = 1; l <= 12; l++) {
+        let totalLvl = (currentStory - 1) * 12 + l;
+        const card = document.createElement('div');
+        const isUnlocked = totalLvl <= unlockedLevel;
+        card.className = `level-card ${isUnlocked ? '' : 'locked'}`;
+        card.innerText = `Lvl ${l}`;
+
+        if (isUnlocked) {
+            card.onclick = () => {
+                document.getElementById('level-screen').classList.add('hidden');
+                gameState = 'PLAYING';
+                initLevel(currentStory, l);
+            };
+        }
+        grid.appendChild(card);
+    }
+}
+
+function openShop() {
+    gameState = 'SHOP';
+    document.getElementById('start-screen').classList.add('hidden');
+    document.getElementById('shop-screen').classList.remove('hidden');
+    document.getElementById('shop-coins').innerText = `Your Coins: ${coins} 🪙`;
+
+    const container = document.getElementById('shop-items');
+    container.innerHTML = '';
+
+    charactersCatalog.forEach(c => {
+        const isOwned = ownedChars.includes(c.id);
+        const isEquipped = selectedCharacter === c.id;
+        const item = document.createElement('div');
+        item.className = `shop-item ${isEquipped ? 'active' : ''}`;
+        item.innerHTML = `
+            <div class="shop-item-icon">${c.icon}</div>
+            <div class="shop-item-title">${c.name}</div>
+            <div class="shop-item-price">${isOwned ? (isEquipped ? 'EQUIPPED' : 'OWNED') : c.price + ' 🪙'}</div>
+        `;
+        item.onclick = () => {
+            if (isOwned) {
+                selectedCharacter = c.id;
+            } else if (coins >= c.price) {
+                coins -= c.price;
+                ownedChars.push(c.id);
+                selectedCharacter = c.id;
+                localStorage.setItem('af_coins', coins);
+                localStorage.setItem('af_owned_chars', JSON.stringify(ownedChars));
+            }
+            openShop();
+        };
+        container.appendChild(item);
+    });
+}
+
+function nextLevel() {
+    if (currentLevel < 12) {
+        currentLevel++;
+    } else if (currentStory < 20) {
+        currentStory++;
+        currentLevel = 1;
+    }
+    document.getElementById('end-screen').classList.add('hidden');
+    gameState = 'PLAYING';
+    initLevel(currentStory, currentLevel);
+}
+
+function restartLevel() {
+    document.getElementById('end-screen').classList.add('hidden');
+    gameState = 'PLAYING';
+    initLevel(currentStory, currentLevel);
+}
+
+// Collision Check & Physics Loop
+function checkCollisions() {
+    if (!currentFlappo || !currentFlappo.launched) return;
+
+    // Check Block Collisions
+    blocks.forEach((b, index) => {
+        if (
+            currentFlappo.x + currentFlappo.radius > b.x &&
+            currentFlappo.x - currentFlappo.radius < b.x + b.w &&
+            currentFlappo.y + currentFlappo.radius > b.y &&
+            currentFlappo.y - currentFlappo.radius < b.y + b.h
+        ) {
+            b.hp -= 40;
+            currentFlappo.vx *= -0.5;
+            if (b.hp <= 0) blocks.splice(index, 1);
+        }
+    });
+
+    // Check Enemy Collisions
+    enemies.forEach((e, index) => {
+        const dist = Math.hypot(currentFlappo.x - e.x, currentFlappo.y - e.y);
+        if (dist < currentFlappo.radius + e.radius) {
+            enemies.splice(index, 1);
+        }
+    });
+}
+
+// Render Loop
+function render() {
+    ctx.clearRect(0, 0, W, H);
+
+    // Environment BG
+    const env = storyEnvironments[(currentStory - 1) % storyEnvironments.length];
+    let grad = ctx.createLinearGradient(0, 0, 0, H);
+    grad.addColorStop(0, env.bgTop);
+    grad.addColorStop(1, env.bgBot);
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, W, H);
+
+    // Ground
+    ctx.fillStyle = env.ground;
+    ctx.fillRect(0, H - 80, W, 80);
+
+    if (gameState === 'PLAYING') {
+        // Slingshot Rubber Line
+        if (isDragging) {
+            ctx.strokeStyle = '#7c2d12';
+            ctx.lineWidth = 6;
+            ctx.beginPath();
+            ctx.moveTo(slingshot.x - 15, slingshot.y);
+            ctx.lineTo(dragPos.x, dragPos.y);
+            ctx.lineTo(slingshot.x + 15, slingshot.y);
+            ctx.stroke();
+
+            // Trajectory Prediction Dots
+            ctx.fillStyle = 'rgba(255,255,255,0.6)';
+            let simX = dragPos.x, simY = dragPos.y;
+            let simVx = (slingshot.x - dragPos.x) * 0.22;
+            let simVy = (slingshot.y - dragPos.y) * 0.22;
+
+            for (let i = 0; i < 15; i++) {
+                simVy += 0.35;
+                simX += simVx;
+                simY += simVy;
+                ctx.beginPath();
+                ctx.arc(simX, simY, 4, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        // Draw Slingshot Frame
+        ctx.fillStyle = '#7c2d12';
+        ctx.fillRect(slingshot.x - 8, slingshot.y, 16, H - 80 - slingshot.y);
+
+        // Update Physics
+        if (currentFlappo) {
+            currentFlappo.update();
+            currentFlappo.draw();
+            checkCollisions();
+        }
+
+        // Draw Blocks & Enemies
+        blocks.forEach(b => b.draw());
+        enemies.forEach(e => e.draw());
+    }
+
+    requestAnimationFrame(render);
+}
+
+render();
+</script>
+</body>
+</html>
